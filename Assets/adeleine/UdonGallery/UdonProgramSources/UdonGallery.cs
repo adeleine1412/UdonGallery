@@ -25,7 +25,7 @@ public class UdonGallery : UdonSharpBehaviour {
     // misc
     private GameObject[] views;
     public GameObject total;
-    public int index;
+    public int index = 0;
 
     // filter values
     public string timestamp;
@@ -47,8 +47,8 @@ public class UdonGallery : UdonSharpBehaviour {
     }
 
     public void ShowImage(int i) {
-        main_image.GetComponent<Image>().sprite = grid_album.transform.GetChild(i).GetComponent<Image>().sprite;
         index = i;
+        main_image.GetComponent<Image>().sprite = grid_album.transform.GetChild(i).GetComponent<Image>().sprite;
         UpdateInfoAttributes();
     }
 
@@ -94,21 +94,16 @@ public class UdonGallery : UdonSharpBehaviour {
             grid_clone.transform.SetParent(grid_album.transform);
             grid_clone.SetActive(true);
 
-            // scale to fit
             grid_clone.GetComponent<RectTransform>().localScale = new Vector3(1f, 1f, 0);
-
-            index = 0;
         }
 
-        ShowImage(index);
-        ShowView(main_view);
+        index = 0;
+        SetIndex();
     }
 
     public void FilterPerson() {
-        // destro all previouse images
-        for (int i = 0; i < grid_album.transform.childCount; ++i) Destroy(grid_album.transform.GetChild(i));
+        for (int i = 0; i < grid_album.transform.childCount; ++i) Destroy(grid_album.transform.GetChild(i).gameObject, 0f);
 
-        // get every image that contains the player
         for (int i = 0; i < images.transform.childCount; i++) {
             Metadata metadata = images.transform.GetChild(i).GetComponent<Metadata>();
             foreach (GameObject p in metadata.people) if (p.name == person) {
@@ -116,20 +111,18 @@ public class UdonGallery : UdonSharpBehaviour {
                 grid_clone.transform.position = grid_album.transform.position;
                 grid_clone.transform.SetParent(grid_album.transform);
                 grid_clone.SetActive(true);
+                grid_clone.GetComponent<RectTransform>().localScale = new Vector3(1f, 1f, 0);
                 break;
             }
         }
 
         index = 0;
-        ShowImage(index);
-        ShowView(main_view);
+        SendCustomEventDelayedFrames("SetIndex", (grid_album.transform.childCount / 10));
     }
 
     public void FilterTimestamp() {
-        // destro all previouse images
-        for (int i = 0; i < grid_album.transform.childCount; ++i) Destroy(grid_album.transform.GetChild(i));
+        for (int i = 0; i < grid_album.transform.childCount; ++i) Destroy(grid_album.transform.GetChild(i).gameObject, 0f);
 
-        // get every image that has the same timestamp
         for (int i = 0; i < images.transform.childCount; i++) {
             Metadata metadata = images.transform.GetChild(i).GetComponent<Metadata>();
             if ((metadata.year + " / " + metadata.month) == timestamp) {
@@ -137,19 +130,17 @@ public class UdonGallery : UdonSharpBehaviour {
                 grid_clone.transform.position = grid_album.transform.position;
                 grid_clone.transform.SetParent(grid_album.transform);
                 grid_clone.SetActive(true);
+                grid_clone.GetComponent<RectTransform>().localScale = new Vector3(1f, 1f, 0);
             }
         }
 
         index = 0;
-        ShowImage(index);
-        ShowView(main_view);
+        SendCustomEventDelayedFrames("SetIndex", (grid_album.transform.childCount / 10));
     }
 
     public void FilterWorld() {
-        // destro all previouse images
-        for (int i = 0; i < grid_album.transform.childCount; ++i) Destroy(grid_album.transform.GetChild(i));
+        for (int i = 0; i < grid_album.transform.childCount; ++i) Destroy(grid_album.transform.GetChild(i).gameObject, 0f);
 
-        // get every image that has the same world
         for (int i = 0; i < images.transform.childCount; i++) {
             Metadata metadata = images.transform.GetChild(i).GetComponent<Metadata>();
             if (metadata.world.name == world) {
@@ -157,12 +148,12 @@ public class UdonGallery : UdonSharpBehaviour {
                 grid_clone.transform.position = grid_album.transform.position;
                 grid_clone.transform.SetParent(grid_album.transform);
                 grid_clone.SetActive(true);
+                grid_clone.GetComponent<RectTransform>().localScale = new Vector3(1f, 1f, 0);
             }
         }
 
         index = 0;
-        ShowImage(index);
-        ShowView(main_view);
+        SendCustomEventDelayedFrames("SetIndex", (grid_album.transform.childCount / 10));
     }
-
+    
 }
