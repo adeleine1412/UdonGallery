@@ -6,7 +6,7 @@ using VRC.Udon;
 
 public class Metadata : UdonSharpBehaviour {
 
-    public ViewManager viewmanager;
+    private UdonGallery udongallery;
     public GameObject[] people;
     public GameObject world;
     public string note;
@@ -14,11 +14,11 @@ public class Metadata : UdonSharpBehaviour {
     public int year;
 
     void Start() {
-        viewmanager = GameObject.Find("ViewManager").GetComponent<ViewManager>();
+        udongallery = GameObject.Find("UdonGallery").GetComponent<UdonGallery>();
     }
 
     public override void Interact() {
-        viewmanager.SetProgramVariable("index", transform.GetSiblingIndex());
-        viewmanager.SendCustomEvent("SetIndex");
+        udongallery.SetProgramVariable("index", transform.GetSiblingIndex());
+        udongallery.SendCustomEvent("SetIndex");
     }
 }

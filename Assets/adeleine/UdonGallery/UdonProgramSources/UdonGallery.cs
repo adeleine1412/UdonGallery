@@ -5,7 +5,7 @@ using VRC.SDKBase;
 using VRC.Udon;
 using UnityEngine.UI;
 
-public class ViewManager : UdonSharpBehaviour {
+public class UdonGallery : UdonSharpBehaviour {
 
     // views
     public GameObject main_view;
