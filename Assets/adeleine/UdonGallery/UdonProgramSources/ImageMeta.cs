@@ -4,7 +4,7 @@ using UnityEngine;
 using VRC.SDKBase;
 using VRC.Udon;
 
-public class Metadata : UdonSharpBehaviour {
+public class ImageMeta : UdonSharpBehaviour {
 
     private UdonGallery udongallery;
     public GameObject[] people;

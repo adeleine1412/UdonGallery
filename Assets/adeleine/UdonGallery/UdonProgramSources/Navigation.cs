@@ -4,41 +4,34 @@ using UnityEngine;
 using VRC.SDKBase;
 using VRC.Udon;
 using UnityEngine.UI;
-using UnityEngine.EventSystems;
-using System.Collections;
 
-public class StatusbarButton : UdonSharpBehaviour {
+public class Navigation : UdonSharpBehaviour {
 
     private Color normalColor;
     public GameObject target;
     public Button button;
-    private bool active;
 
     void Start() {
         button = transform.GetComponent<Button>();
         normalColor = button.colors.normalColor;
+        UpdateColor();
     }
 
-    void Update() {
+    public void UpdateColor() {
         ColorBlock colors = button.colors;
-
-        if (target != null) {
-            // check if target view is active, if yes, keep button active
-            if (target.activeSelf && !active) active = true;
-            if (!target.activeSelf && active) active = false;
-        }
-
-        if (active) colors.normalColor = colors.selectedColor;
-        if (!active) colors.normalColor = normalColor;
-
+        colors.normalColor = (target.activeSelf ? colors.selectedColor : normalColor);
         button.colors = colors;
+
+        SendCustomEventDelayedFrames("UpdateColor", 20);
     }
 
     public void SetActive() {
         target.SetActive(true);
+        UpdateColor();
     }
 
     public void SetInactive() {
         target.SetActive(false);
+        UpdateColor();
     }
 }

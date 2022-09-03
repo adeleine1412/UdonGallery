@@ -22,7 +22,13 @@ public class UdonGallery : UdonSharpBehaviour {
     public GameObject info_world;
     public GameObject info_note;
 
+    // filters
+    public GameObject people_filter;
+    public GameObject worlds_filter;
+    public GameObject timestamps_filter;
+
     // misc
+    private GameObject[] filters;
     private GameObject[] views;
     public GameObject total;
     public int index = 0;
@@ -33,38 +39,64 @@ public class UdonGallery : UdonSharpBehaviour {
     public string world;
 
     void Start() {
+        // define filter and main views
+        filters = new GameObject[] { people_filter, worlds_filter, timestamps_filter };
         views = new GameObject[] { main_view, grid_view, info_view, filter_view };
-        LoadAllImages();
+
+        // load all images and show the first image
+        ShowAllImages();
+        ShowImage(index);
+
+        // show the proper views
+        ShowFilter(people_filter);
+        ShowView(main_view);
     }
 
     public void ShowView(GameObject view) { foreach (GameObject x in views) x.SetActive((x == view ? true : false)); }
+    public void ShowFilter(GameObject filter) { foreach (GameObject x in filters) x.SetActive((x == filter ? true : false)); }
     public void Next() { ShowImage(((index + 1) == grid_album.transform.childCount) ? 0 : (index + 1)); }
     public void Previouse() { ShowImage((index == 0) ? (grid_album.transform.childCount - 1) : (index - 1)); }
+    public void UpdateTotalCount() { total.GetComponent<Text>().text = (index + 1) + " / " + grid_album.transform.childCount; }
+    public void SetTotalCount(int current, int max) { total.GetComponent<Text>().text = current + " / " + max; }
+
+    public void ShowImage(int i) {
+        main_image.GetComponent<Image>().sprite = grid_album.transform.GetChild(i).GetComponent<Image>().sprite;
+        index = i;
+
+        SendCustomEventDelayedFrames("UpdateHighlighted", 10);
+        SendCustomEventDelayedFrames("UpdateTotalCount", 10);
+        SendCustomEventDelayedFrames("UpdateMetadata", 10);
+    }
 
     public void SetIndex() {
         ShowView(main_view);
         ShowImage(index);
     }
 
-    public void ShowImage(int i) {
-        index = i;
-        main_image.GetComponent<Image>().sprite = grid_album.transform.GetChild(i).GetComponent<Image>().sprite;
-        UpdateInfoAttributes();
+    public void UpdateHighlighted() {
+        for (int i = 0; i < grid_album.transform.childCount; ++i) {
+            var color = grid_album.transform.GetChild(i).GetComponent<Image>().color;
+            color.a = (i == index) ? 0.25f : 1f;
+            grid_album.transform.GetChild(i).GetComponent<Image>().color = color;
+        }
     }
 
-    public void UpdateInfoAttributes() {
-        // update info view with metadata
-        Metadata metadata = grid_album.transform.GetChild(index).GetComponent<Metadata>();
+    public void AppendImage(GameObject image) {
+        image.transform.position = grid_album.transform.position;
+        image.transform.SetParent(grid_album.transform);
+        image.SetActive(true);
+        image.GetComponent<RectTransform>().localScale = new Vector3(1f, 1f, 0);
+    }
 
+    public void UpdateMetadata() {
+        ImageMeta metadata = grid_album.transform.GetChild(index).GetComponent<ImageMeta>();
         GameObject[] people = (GameObject[]) metadata.GetProgramVariable("people");
         GameObject world = (GameObject) metadata.GetProgramVariable("world");
         string note = (string) metadata.GetProgramVariable("note");
         int month = (int) metadata.GetProgramVariable("month");
         int year = (int) metadata.GetProgramVariable("year");
-        string people_temp = "";
-
-        foreach (GameObject p in people) people_temp = (people_temp == "") ? p.name : people_temp + ", " + p.name;
-
+        
+        string people_temp = ""; foreach (GameObject p in people) people_temp = (people_temp == "") ? p.name : people_temp + ", " + p.name;
         string timestamp_str = (month < 1 && year < 1) ? "Either not set yet or I could not remember! Sorry!" : $"{month} / {year}";
         string people_str = people == null ? "Either not set yet or I could not remember! Sorry!" : people_temp;
         string world_str = world == null ? "Either not set yet or I could not remember! Sorry!" : world.name;
@@ -74,86 +106,59 @@ public class UdonGallery : UdonSharpBehaviour {
         info_people.GetComponent<Text>().text = $"<b>On the picture</b>\n\n<size=40>{people_str}</size>";
         info_world.GetComponent<Text>().text = $"<b>World</b>\n\n<size=40>{world_str}</size>";
         info_note.GetComponent<Text>().text = $"<b>Note</b>\n\n<size=40>{note_str}</size>";
-
-        // set new highlight in grid view
-        for (int i = 0; i < grid_album.transform.childCount; ++i) {
-            var color = grid_album.transform.GetChild(i).GetComponent<Image>().color;
-            color.a = grid_album.transform.GetChild(i).GetSiblingIndex() == index ? 0.1f : 1f;
-            grid_album.transform.GetChild(i).GetComponent<Image>().color = color;
-        }
-
-        // update total count on top statusbar
-        total.GetComponent<Text>().text = (index + 1) + " / " + grid_album.transform.childCount;
     }
 
-    public void LoadAllImages() {
+    public void ShowAllImages() {
+        // remove all current images
+        for (int i = 0; i < grid_album.transform.childCount; ++i) Destroy(grid_album.transform.GetChild(i).gameObject, 0f);
+
+        // make a copy of all images listed
         for (int i = 0; i < images.transform.childCount; i++) {
-            // create a main view clone of the image database
             var grid_clone = VRCInstantiate(images.transform.GetChild(i).transform.gameObject);
-            grid_clone.transform.position = grid_album.transform.position;
-            grid_clone.transform.SetParent(grid_album.transform);
-            grid_clone.SetActive(true);
-
-            grid_clone.GetComponent<RectTransform>().localScale = new Vector3(1f, 1f, 0);
+            AppendImage(grid_clone);
         }
-
-        index = 0;
-        SetIndex();
     }
 
-    public void FilterPerson() {
+    public void FilterPerson() { Filter(0); }
+    public void FilterWorld() { Filter(1); }
+    public void FilterTimestamp() { Filter(2); }
+
+    public void Filter(int type) {
+        int result_count = 0;
+
+        // remove all current images
         for (int i = 0; i < grid_album.transform.childCount; ++i) Destroy(grid_album.transform.GetChild(i).gameObject, 0f);
 
         for (int i = 0; i < images.transform.childCount; i++) {
-            Metadata metadata = images.transform.GetChild(i).GetComponent<Metadata>();
-            foreach (GameObject p in metadata.people) if (p.name == person) {
+            ImageMeta metadata = images.transform.GetChild(i).GetComponent<ImageMeta>();
+
+            // by person
+            if (type == 0) foreach (GameObject p in metadata.people) if (p.name == person) {
                 var grid_clone = VRCInstantiate(images.transform.GetChild(i).transform.gameObject);
-                grid_clone.transform.position = grid_album.transform.position;
-                grid_clone.transform.SetParent(grid_album.transform);
-                grid_clone.SetActive(true);
-                grid_clone.GetComponent<RectTransform>().localScale = new Vector3(1f, 1f, 0);
+                AppendImage(grid_clone);
+                result_count++;
                 break;
             }
-        }
 
-        index = 0;
-        SendCustomEventDelayedFrames("SetIndex", (grid_album.transform.childCount / 10));
-    }
-
-    public void FilterTimestamp() {
-        for (int i = 0; i < grid_album.transform.childCount; ++i) Destroy(grid_album.transform.GetChild(i).gameObject, 0f);
-
-        for (int i = 0; i < images.transform.childCount; i++) {
-            Metadata metadata = images.transform.GetChild(i).GetComponent<Metadata>();
-            if ((metadata.year + " / " + metadata.month) == timestamp) {
+            // by world
+            if (type == 1) if (metadata.world.name == world) {
                 var grid_clone = VRCInstantiate(images.transform.GetChild(i).transform.gameObject);
-                grid_clone.transform.position = grid_album.transform.position;
-                grid_clone.transform.SetParent(grid_album.transform);
-                grid_clone.SetActive(true);
-                grid_clone.GetComponent<RectTransform>().localScale = new Vector3(1f, 1f, 0);
+                AppendImage(grid_clone);
+                result_count++;
             }
-        }
 
-        index = 0;
-        SendCustomEventDelayedFrames("SetIndex", (grid_album.transform.childCount / 10));
-    }
-
-    public void FilterWorld() {
-        for (int i = 0; i < grid_album.transform.childCount; ++i) Destroy(grid_album.transform.GetChild(i).gameObject, 0f);
-
-        for (int i = 0; i < images.transform.childCount; i++) {
-            Metadata metadata = images.transform.GetChild(i).GetComponent<Metadata>();
-            if (metadata.world.name == world) {
+            // by timestamp
+            if (type == 2) if ((metadata.year + " / " + metadata.month) == timestamp) {
                 var grid_clone = VRCInstantiate(images.transform.GetChild(i).transform.gameObject);
-                grid_clone.transform.position = grid_album.transform.position;
-                grid_clone.transform.SetParent(grid_album.transform);
-                grid_clone.SetActive(true);
-                grid_clone.GetComponent<RectTransform>().localScale = new Vector3(1f, 1f, 0);
+                AppendImage(grid_clone);
+                result_count++;
             }
+
         }
 
-        index = 0;
-        SendCustomEventDelayedFrames("SetIndex", (grid_album.transform.childCount / 10));
+        // update everything
+        ShowImage(0);
+        ShowView(grid_view);
     }
     
 }
