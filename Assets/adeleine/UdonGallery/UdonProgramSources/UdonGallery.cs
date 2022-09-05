@@ -14,6 +14,7 @@ public class UdonGallery : UdonSharpBehaviour {
     public GameObject filter_view;
     public GameObject main_image;
     public GameObject grid_album;
+    public GameObject desktop_warning;
     public GameObject images;
 
     // info
@@ -50,6 +51,9 @@ public class UdonGallery : UdonSharpBehaviour {
         // show the proper views
         ShowFilter(people_filter);
         ShowView(main_view);
+
+        // show warning if user is on desktop
+        if (!Networking.LocalPlayer.IsUserInVR()) desktop_warning.SetActive(true);
     }
 
     public void ShowView(GameObject view) { foreach (GameObject x in views) x.SetActive((x == view ? true : false)); }
@@ -159,6 +163,10 @@ public class UdonGallery : UdonSharpBehaviour {
         // update everything
         ShowImage(0);
         ShowView(grid_view);
+    }
+
+    void Update() {
+        if (desktop_warning.activeSelf && Input.GetKeyDown(KeyCode.Tab)) desktop_warning.SetActive(false);
     }
     
 }
