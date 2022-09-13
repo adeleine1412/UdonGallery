@@ -14,7 +14,7 @@ public class UdonGallery : UdonSharpBehaviour {
     public GameObject filter_view;
     public GameObject main_image;
     public GameObject grid_album;
-    public GameObject desktop_warning;
+    /* public GameObject desktop_warning; */
     public GameObject images;
 
     // info
@@ -24,14 +24,14 @@ public class UdonGallery : UdonSharpBehaviour {
     public GameObject info_note;
 
     // filters
-    public GameObject people_filter;
-    public GameObject worlds_filter;
-    public GameObject timestamps_filter;
+    public GameObject people_filter_view;
+    public GameObject worlds_filter_view;
+    public GameObject timestamps_filter_view;
 
     // misc
     private GameObject[] filters;
     private GameObject[] views;
-    public GameObject total;
+    /* public GameObject total; */
     public int index = 0;
 
     // filter values
@@ -41,7 +41,7 @@ public class UdonGallery : UdonSharpBehaviour {
 
     void Start() {
         // define filter and main views
-        filters = new GameObject[] { people_filter, worlds_filter, timestamps_filter };
+        filters = new GameObject[] { people_filter_view, worlds_filter_view, timestamps_filter_view };
         views = new GameObject[] { main_view, grid_view, info_view, filter_view };
 
         // load all images and show the first image
@@ -49,26 +49,27 @@ public class UdonGallery : UdonSharpBehaviour {
         ShowImage(index);
 
         // show the proper views
-        ShowFilter(people_filter);
+        /* ShowFilter(people_filter_view); */
         ShowView(main_view);
 
         // show warning if user is on desktop
-        if (!Networking.LocalPlayer.IsUserInVR()) desktop_warning.SetActive(true);
+        /* if (Networking.LocalPlayer != null && !Networking.LocalPlayer.IsUserInVR()) desktop_warning.SetActive(true); */
     }
 
+    /* void Update() { if (desktop_warning.activeSelf && Input.GetKeyDown(KeyCode.Tab)) desktop_warning.SetActive(false); } */
     public void ShowView(GameObject view) { foreach (GameObject x in views) x.SetActive((x == view ? true : false)); }
     public void ShowFilter(GameObject filter) { foreach (GameObject x in filters) x.SetActive((x == filter ? true : false)); }
     public void Next() { ShowImage(((index + 1) == grid_album.transform.childCount) ? 0 : (index + 1)); }
     public void Previouse() { ShowImage((index == 0) ? (grid_album.transform.childCount - 1) : (index - 1)); }
-    public void UpdateTotalCount() { total.GetComponent<Text>().text = (index + 1) + " / " + grid_album.transform.childCount; }
-    public void SetTotalCount(int current, int max) { total.GetComponent<Text>().text = current + " / " + max; }
+    /* public void UpdateTotalCount() { total.GetComponent<Text>().text = (index + 1) + " / " + grid_album.transform.childCount; }
+    public void SetTotalCount(int current, int max) { total.GetComponent<Text>().text = current + " / " + max; } */
 
     public void ShowImage(int i) {
         main_image.GetComponent<Image>().sprite = grid_album.transform.GetChild(i).GetComponent<Image>().sprite;
         index = i;
 
         SendCustomEventDelayedFrames("UpdateHighlighted", 10);
-        SendCustomEventDelayedFrames("UpdateTotalCount", 10);
+        /* SendCustomEventDelayedFrames("UpdateTotalCount", 10); */
         SendCustomEventDelayedFrames("UpdateMetadata", 10);
     }
 
@@ -163,10 +164,6 @@ public class UdonGallery : UdonSharpBehaviour {
         // update everything
         ShowImage(0);
         ShowView(grid_view);
-    }
-
-    void Update() {
-        if (desktop_warning.activeSelf && Input.GetKeyDown(KeyCode.Tab)) desktop_warning.SetActive(false);
     }
     
 }

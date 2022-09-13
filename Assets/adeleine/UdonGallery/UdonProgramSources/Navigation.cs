@@ -3,35 +3,28 @@ using UdonSharp;
 using UnityEngine;
 using VRC.SDKBase;
 using VRC.Udon;
-using UnityEngine.UI;
 
 public class Navigation : UdonSharpBehaviour {
 
     private Color normalColor;
     public GameObject target;
-    public Button button;
+    private Animator anim;
 
     void Start() {
-        button = transform.GetComponent<Button>();
-        normalColor = button.colors.normalColor;
-        UpdateColor();
+        anim = GetComponent<Animator>();
     }
 
-    public void UpdateColor() {
-        ColorBlock colors = button.colors;
-        colors.normalColor = (target.activeSelf ? colors.selectedColor : normalColor);
-        button.colors = colors;
-
-        SendCustomEventDelayedFrames("UpdateColor", 20);
+    void Update() {
+        anim.SetBool("Active", (target.activeSelf ? true : false));
     }
 
     public void SetActive() {
         target.SetActive(true);
-        UpdateColor();
+        anim.SetBool("Active", true);
     }
 
     public void SetInactive() {
         target.SetActive(false);
-        UpdateColor();
+        anim.SetBool("Active", false);
     }
 }
